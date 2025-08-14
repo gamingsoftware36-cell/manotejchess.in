@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ManoChess</title>
+<style>
+  body {
+    background: radial-gradient(circle at center, #222, #000);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    margin: 0;
+    color: white;
+    font-family: sans-serif;
+  }
+  #board {
+    display: grid;
+    grid-template-columns: repeat(8, 80px);
+    grid-template-rows: repeat(8, 80px);
+    border: 4px solid #333;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+  }
+  .cell {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 48px;
+    position: relative;
+  }
+  .light { background-color: #f0d9b5; }
+  .dark { background-color: #b58863; }
+  .highlight::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: rgba(0,0,0,0.4);
+    border-radius: 50%;
+  }
+  #popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%);
+    background: rgba(0,0,0,0.85);
+    color: white;
+    font-size: 28px;
+    padding: 20px 40px;
+    border-radius: 12px;
+    display: none;
+    z-index: 10;
+  }
+</style>
+</head>
+<body>
+<h1>ManoChess</h1>
+<div id="board"></div>
+<div id="popup"></div>
+
+<script>
+/* --- Chess.js simplified for offline --- */
+(function(){var a="undefined"!==typeof exports?exports:this,b=a.Chess=function(f){function m(a,b){var c=a.charCodeAt(0),d=parseInt(a.charAt(1));if(c>=97&&c<=104&&1<=d&&8>=d){if("undefined"===typeof b)return{row:8-d,col:c-97};b.row=8-d;b.col=c-97;return b}return null}function y(a){return String.fromCharCode("a".charCodeAt(0)+a.col)+(8-a.row)}var c="rnbqkbnrpppppppp                                PPPPPPPPRNBQKBNR",e=[];f=f||{};for(var g=0;8>g;g++)for(var h=0;8>h;h++)e.push(c[g*8+h]===" "?null:c[g*8+h]);var d="w";function z(){return JSON.parse(JSON.stringify(e))}function A(a,b){var c=z(),d=m(a),g=m(b),f=c[8*d.row+d.col];c[8*d.row+d.col]=null;c[8*g.row+g.col]=f;e=c;return!0}function B(){var a=!1;for(var b=0;b<64;b++)if(e[b]==="k"||e[b]==="K")a=!0;return a}return{board:function(){var a=[];for(var b=0;8>b;b++){for(var c=[],d=0;8>d;d++)c.push(e[b*8+d]);a.push(c)}return a},turn:function(){return d},moves:function(a){var b=[];if(!a)return b;var c=m(a);var f=e[8*c.row+c.col];if(!f)return b;for(var g=0;8>g;g++)for(var h=0;8>h;h++){var k=e[8*g+h];if(!k||k.toLowerCase()!==f.toLowerCase())b.push(y({row:g,col:h}))}return b},move:function(a){if(A(a.from,a.to)){d=d==="w"?"b":"w";if(!B()){return"gameover"}return!0}return!1}}};
+})();
+
+/* --- UI code --- */
+const boardEl = document.getElementById('board');
+const popupEl = document.getElementById('popup');
+const game = new Chess();
+const piecesUnicode = {
+  'P': '♙', 'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔',
+  'p': '♟', 'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚'
+};
+let selectedSquare = null;
+let highlightedSquares = [];
+
+function renderBoard() {
+  boardEl.innerHTML = '';
+  const board = game.board();
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell ' + ((row + col) % 2 === 0 ? 'light' : 'dark');
+      const piece = board[row][col];
+      const square = String.fromCharCode(97+col) + (8-row);
+      if (piece) cell.textContent = piecesUnicode[piece];
+      if (highlightedSquares.includes(square)) cell.classList.add('highlight');
+      cell.onclick = () => onCellClick(square);
+      boardEl.appendChild(cell);
+    }
+  }
+}
+
+function onCellClick(square) {
+  if (selectedSquare) {
+    const moveResult = game.move({from: selectedSquare, to: square});
+    selectedSquare = null;
+    highlightedSquares = [];
+    if (moveResult === 'gameover') {
+      popupEl.textContent = (game.turn()==='w' ? 'Black Wins!' : 'White Wins!');
+      popupEl.style.display = 'block';
+    }
+    renderBoard();
+  } else {
+    selectedSquare = square;
+    highlightedSquares = game.moves(square);
+    renderBoard();
+  }
+}
+
+renderBoard();
+</script>
+</body>
+</html>
